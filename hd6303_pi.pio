@@ -1,0 +1,101 @@
+;
+; Copyright (c) 2023 sashz /pdaXrom.org/
+;
+; SPDX-License-Identifier: BSD-3-Clause
+;
+
+.program pi
+
+; For debugging, `set pins, 0` up to `3` may be used
+
+pi_start:
+
+    ; Change IO dir of all pins to INPUT
+    mov osr, null
+    out pindirs, 32
+
+    ; wait for CPU_AS = 1
+    wait 1 gpio 17
+
+    ; wait for CPU_AS = 0
+    wait 0 gpio 17
+
+    ; Sample AD0 -> AD15, put in ISR
+    in pins, 18
+    push
+
+    ; wait for CPU_E = 1
+    wait 1 gpio 18
+
+    ; Read all pins into OSR
+    mov osr, pins
+    ; Dump 16 bits of OSR contents
+    out null, 16
+
+    ; Effectively read gpio 16 (CPU_RW) into y, so we can branch on it
+    out y, 1
+
+    ; if (!y) goto handle_write
+    jmp !y handle_write
+
+    ; Read data from c code into OSR
+    pull
+
+    ; Write 16 bits from OSR to pins
+    out pins, 8
+
+    ; Set pindirs to 0xFFFFFFFF
+    ; Note that only the pins set up in sm_config_set_out_pins() are affected,
+    ; i.e. GPIO0-GPIO15
+    mov osr, ~null
+    out pindirs, 32
+
+    ; wait for CPU_E = 0
+    wait 0 gpio 18
+
+    jmp pi_start
+
+
+handle_write:
+    ; wait for CPU_E = 0
+    wait 0 gpio 18
+
+    ; Sample AD0 -> AD8, put in ISR
+    in pins, 8
+
+    push
+
+    jmp pi_start
+
+% c-sdk {
+void pi_program_init(PIO pio, uint sm, uint offset) {
+
+    // gpio0 -> 19 input
+    for (int i = 0; i <= 18; i++) {
+        pio_gpio_init(pio, i);
+    }
+
+    // AD0 -> AD15 input
+    // gpio 0 -> 22 are input for now
+    pio_sm_set_consecutive_pindirs(pio, sm, 0, 19, false);
+
+    pio_sm_config c = pi_program_get_default_config(offset);
+
+    // shift_right=false, autopush=false, push_threshold=32
+    sm_config_set_in_shift(&c, false, false, 32);
+
+    // shift_right=true, autopull=false, pull_threshold=32
+    sm_config_set_out_shift(&c, true, false, 32);
+
+    // AD0 -> AD16 as in pins
+    sm_config_set_in_pins(&c, 0);
+
+    // AD0 -> AD16 as out pins
+    sm_config_set_out_pins(&c, 0, 8);
+
+    // JMP pin = AS
+    sm_config_set_jmp_pin(&c, 17);
+
+    pio_sm_init(pio, sm, offset, &c);
+}
+%}
