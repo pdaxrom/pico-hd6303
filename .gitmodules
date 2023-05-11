@@ -1,0 +1,3 @@
+[submodule "hd6303-toolchain"]
+	path = hd6303-toolchain
+	url = git@github.com:pdaxrom/hd6303-toolchain.git
