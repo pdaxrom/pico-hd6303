@@ -29,3 +29,8 @@
 #define CPU_CLK 21
 
 #define LED_PIN 25
+
+#define UART_TX_PIN (28)
+#define UART_RX_PIN (29)	/* not available on the pico */
+#define UART_ID     uart0
+#define BAUD_RATE   115200
