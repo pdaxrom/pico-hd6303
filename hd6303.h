@@ -3,7 +3,8 @@
 /*
  * Minimal configuration:
  * NMI (4), IRQ1 (5), STBY (7), P21 (9) - +3.3v
- * P20 (8), P22 (10) - GND
+ * P20 (8), P22 (10), VSS (1) - GND
+ * VCC (21) - +3.3V
  */
 
 #define CPU_AD0  0
