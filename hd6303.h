@@ -22,15 +22,15 @@
 #define CPU_A13 13
 #define CPU_A14 14
 #define CPU_A15 15
-#define CPU_RW  16
-#define CPU_AS  17
-#define CPU_E   18
-#define CPU_RST 19
+#define CPU_RW  18
+#define CPU_AS  19
+#define CPU_E   20
+#define CPU_RST 22
 #define CPU_CLK 21
 
 #define LED_PIN 25
 
-#define UART_TX_PIN (28)
-#define UART_RX_PIN (29)	/* not available on the pico */
+#define UART_TX_PIN (16)
+#define UART_RX_PIN (17)
 #define UART_ID     uart0
 #define BAUD_RATE   115200

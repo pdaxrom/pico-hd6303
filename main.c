@@ -35,9 +35,14 @@ static mutex_t cdc_tx_mutex;
 
 void hd6303_pi()
 {
+#ifdef USB_UART
     sleep_ms(4000);
+#endif
 
     for (int i = 0; i <= 27; i++) {
+	if (i == UART_TX_PIN || i == UART_RX_PIN) {
+	    continue;
+	}
 	gpio_init(i);
 	gpio_set_dir(i, GPIO_IN);
 	gpio_set_pulls(i, false, false);
@@ -185,9 +190,8 @@ int main()
     tud_init(BOARD_TUD_RHPORT);
 #endif
 
-//    stdio_init_all();
+    stdio_init_all();
     stdio_uart_init_full(UART_ID, BAUD_RATE, UART_TX_PIN, UART_RX_PIN);
-
 
 #ifdef USB_UART
     cdc_rx_cnt = 0;

@@ -15,19 +15,19 @@ pi_start:
     out pindirs, 32
 
     ; wait for CPU_AS = 1
-    wait 1 gpio 17
+    wait 1 gpio 19
 
     ; wait for CPU_AS = 0
-    wait 0 gpio 17
+    wait 0 gpio 19
 
     ; Sample AD0 -> AD15, put in ISR
-    in pins, 18
+    in pins, 20
     push
 
     ; Read all pins into OSR
     mov osr, pins
     ; Dump 16 bits of OSR contents
-    out null, 16
+    out null, 18
 
     ; Effectively read gpio 16 (CPU_RW) into y, so we can branch on it
     out y, 1
@@ -39,7 +39,7 @@ pi_start:
     pull
 
     ; wait for CPU_E = 1
-    wait 1 gpio 18
+    wait 1 gpio 20
 
     ; Write 16 bits from OSR to pins
     out pins, 8
@@ -51,17 +51,17 @@ pi_start:
     out pindirs, 32
 
     ; wait for CPU_E = 0
-    wait 0 gpio 18
+    wait 0 gpio 20
 
     jmp pi_start
 
 
 handle_write:
     ; wait for CPU_E = 1
-    wait 1 gpio 18
+    wait 1 gpio 20
 
     ; wait for CPU_E = 0
-    wait 0 gpio 18
+    wait 0 gpio 20
 
     ; Sample AD0 -> AD8, put in ISR
     in pins, 8
@@ -73,14 +73,17 @@ handle_write:
 % c-sdk {
 void pi_program_init(PIO pio, uint sm, uint offset) {
 
-    // gpio0 -> 19 input
-    for (int i = 0; i <= 18; i++) {
+    // gpio0 -> 20 input
+    for (int i = 0; i <= 20; i++) {
+	if (i == UART_TX_PIN || i == UART_RX_PIN) {
+	    continue;
+	}
         pio_gpio_init(pio, i);
     }
 
     // AD0 -> AD15 input
     // gpio 0 -> 22 are input for now
-    pio_sm_set_consecutive_pindirs(pio, sm, 0, 19, false);
+    pio_sm_set_consecutive_pindirs(pio, sm, 0, 21, false);
 
     pio_sm_config c = pi_program_get_default_config(offset);
 
@@ -97,7 +100,7 @@ void pi_program_init(PIO pio, uint sm, uint offset) {
     sm_config_set_out_pins(&c, 0, 8);
 
     // JMP pin = AS
-    sm_config_set_jmp_pin(&c, 17);
+    sm_config_set_jmp_pin(&c, 19);
 
     pio_sm_init(pio, sm, offset, &c);
 }
