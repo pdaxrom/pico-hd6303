@@ -6,9 +6,13 @@
 #include <pico/multicore.h>
 #include <hardware/clocks.h>
 
+//#define USB_UART
+
+#ifdef USB_UART
 #include <tusb.h>
 #include <bsp/board.h>
 #include "tusb_config.h"
+#endif
 
 #include "hd6303.h"
 #include "hardware.h"
@@ -16,16 +20,18 @@
 
 #include "support/BOOTROM/bootrom.h"
 
-#define CPU_CLOCK_HZ (50000 * 4)
+#define CPU_CLOCK_HZ 2000000
 
 static uint8_t cpu_memory[65536];
 
+#ifdef USB_UART
 static uint8_t cdc_rx_buf[64];
 static uint8_t cdc_tx_buf[64];
 static int cdc_rx_cnt;
 static int cdc_tx_cnt;
 static mutex_t cdc_rx_mutex;
 static mutex_t cdc_tx_mutex;
+#endif
 
 void hd6303_pi()
 {
@@ -45,12 +51,15 @@ void hd6303_pi()
     gpio_pull_up(CPU_RST);
     gpio_put(CPU_RST, 1);
 
+    uint32_t clk_div = clock_get_hz(clk_sys) / (CPU_CLOCK_HZ * 4);
     uint32_t clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS);
-    uint32_t clk_div = clk_hz / CPU_CLOCK_HZ;
 
-    printf("GPIO clock is %d, div is %d, cpu clock is %d\n", clk_hz, clk_div, clk_hz / clk_div / 4);
+    printf("SYS clock is %d, current GPIO clock is %d\n", clock_get_hz(clk_sys), clk_hz);
 
     clock_gpio_init(CPU_CLK, CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS, clk_div);
+    clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS);
+
+    printf("GPIO clock is %d, clock div is %d\n", clk_hz, clk_div);
 
     printf("Resetting...\n");
 
@@ -106,6 +115,7 @@ void hd6303_pi()
 	cpu_addr = cpu_bus & 0xffff;
 	if (cpu_bus & (1 << CPU_RW)) {
 	    if (cpu_addr == HW_UART_DATA) {
+#ifdef USB_UART
 		uint8_t byte = 0;
 		mutex_enter_blocking(&cdc_rx_mutex);
 		if (cdc_rx_cnt > 0) {
@@ -115,7 +125,11 @@ void hd6303_pi()
 		}
 		mutex_exit(&cdc_rx_mutex);
 		pio_sm_put(pio, 0, byte);
+#else
+		pio_sm_put(pio, 0, uart_get_hw(UART_ID)->dr);
+#endif
 	    } else if (cpu_addr == HW_UART_CONFIG) {
+#ifdef USB_UART
 		uint8_t byte = 0;
 		mutex_enter_blocking(&cdc_rx_mutex);
 		if (cdc_rx_cnt > 0) {
@@ -128,6 +142,12 @@ void hd6303_pi()
 		}
 		mutex_exit(&cdc_tx_mutex);
 		pio_sm_put(pio, 0, byte);
+#else
+		pio_sm_put(pio, 0,
+			    ((uart_get_hw(UART_ID)->fr & UART_UARTFR_TXFF_BITS) ? 0x0 : HW_UART_TRD) |
+			    ((uart_get_hw(UART_ID)->fr & UART_UARTFR_RXFE_BITS) ? 0x0 : HW_UART_RRD)
+			  );
+#endif
 	    } else {
 		pio_sm_put(pio, 0, cpu_memory[cpu_addr]);
 	    }
@@ -137,6 +157,7 @@ void hd6303_pi()
 		gpio_put(LED_PIN, cpu_data & 1);
 		cpu_memory[cpu_addr] = cpu_data;
 	    } else if (cpu_addr == HW_UART_DATA) {
+#ifdef USB_UART
 		mutex_enter_blocking(&cdc_tx_mutex);
 		if (cdc_tx_cnt < sizeof(cdc_tx_buf)) {
 		    cdc_tx_buf[cdc_tx_cnt++] = cpu_data;
@@ -144,6 +165,9 @@ void hd6303_pi()
 		    // set overflow tx bit
 		}
 		mutex_exit(&cdc_tx_mutex);
+#else
+		uart_get_hw(UART_ID)->dr = cpu_data;
+#endif
 	    } else {
 		cpu_memory[cpu_addr] = cpu_data;
 	    }
@@ -154,23 +178,29 @@ void hd6303_pi()
 
 int main()
 {
-    board_init();
+    set_sys_clock_khz(220000, true);
 
-    stdio_init_all();
+#ifdef USB_UART
+    board_init();
+    tud_init(BOARD_TUD_RHPORT);
+#endif
+
+//    stdio_init_all();
     stdio_uart_init_full(UART_ID, BAUD_RATE, UART_TX_PIN, UART_RX_PIN);
 
-    // init device stack on configured roothub port
-    tud_init(BOARD_TUD_RHPORT);
 
+#ifdef USB_UART
     cdc_rx_cnt = 0;
     cdc_tx_cnt = 0;
 
     mutex_init(&cdc_rx_mutex);
     mutex_init(&cdc_tx_mutex);
+#endif
 
     multicore_launch_core1(hd6303_pi);
 
     while (true) {
+#ifdef USB_UART
 	tud_task(); // tinyusb device task
 
 	if (tud_cdc_n_available(0)) {
@@ -195,6 +225,9 @@ int main()
 	tud_cdc_n_write_flush(0);
 	cdc_tx_cnt = 0;
 	mutex_exit(&cdc_tx_mutex);
+#else
+        tight_loop_contents();
+#endif
     }
 
     return 0;

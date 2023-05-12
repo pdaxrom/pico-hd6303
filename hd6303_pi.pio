@@ -24,9 +24,6 @@ pi_start:
     in pins, 18
     push
 
-    ; wait for CPU_E = 1
-    wait 1 gpio 18
-
     ; Read all pins into OSR
     mov osr, pins
     ; Dump 16 bits of OSR contents
@@ -40,6 +37,9 @@ pi_start:
 
     ; Read data from c code into OSR
     pull
+
+    ; wait for CPU_E = 1
+    wait 1 gpio 18
 
     ; Write 16 bits from OSR to pins
     out pins, 8
@@ -57,6 +57,9 @@ pi_start:
 
 
 handle_write:
+    ; wait for CPU_E = 1
+    wait 1 gpio 18
+
     ; wait for CPU_E = 0
     wait 0 gpio 18
 
