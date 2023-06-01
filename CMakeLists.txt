@@ -17,7 +17,10 @@ target_sources(${PROJECT_NAME} PUBLIC
         )
 
 # Build pio
-pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/hd6303_pi.pio)
+pico_generate_pio_header(${PROJECT_NAME}
+    ${CMAKE_CURRENT_LIST_DIR}/hd6303_pihw.pio
+    ${CMAKE_CURRENT_LIST_DIR}/hd6303_pi.pio
+)
 
 # Make sure TinyUSB can find tusb_config.h
 target_include_directories(${PROJECT_NAME} PUBLIC

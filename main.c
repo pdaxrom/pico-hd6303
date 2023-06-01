@@ -6,6 +6,7 @@
 #include <pico/multicore.h>
 #include <hardware/clocks.h>
 
+#define PICO_HD6303_HW
 //#define USB_UART
 
 #ifdef USB_UART
@@ -16,8 +17,11 @@
 
 #include "hd6303.h"
 #include "hardware.h"
+#ifdef PICO_HD6303_HW
+#include "hd6303_pihw.pio.h"
+#else
 #include "hd6303_pi.pio.h"
-
+#endif
 #include "support/BOOTROM/bootrom.h"
 
 #define CPU_CLOCK_HZ 2000000
@@ -51,18 +55,28 @@ void hd6303_pi()
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
+    gpio_init(CPU_NMI);
+    gpio_set_dir(CPU_NMI, GPIO_OUT);
+    gpio_pull_up(CPU_NMI);
+    gpio_put(CPU_NMI, 1);
+
+    gpio_init(CPU_IRQ);
+    gpio_set_dir(CPU_IRQ, GPIO_OUT);
+    gpio_pull_up(CPU_IRQ);
+    gpio_put(CPU_IRQ, 1);
+
     gpio_init(CPU_RST);
     gpio_set_dir(CPU_RST, GPIO_OUT);
     gpio_pull_up(CPU_RST);
     gpio_put(CPU_RST, 1);
 
     uint32_t clk_div = clock_get_hz(clk_sys) / (CPU_CLOCK_HZ * 4);
-    uint32_t clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS);
+    uint32_t clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS);
 
     printf("SYS clock is %d, current GPIO clock is %d\n", clock_get_hz(clk_sys), clk_hz);
 
-    clock_gpio_init(CPU_CLK, CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS, clk_div);
-    clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS);
+    clock_gpio_init(CPU_CLK, CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS, clk_div);
+    clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS);
 
     printf("GPIO clock is %d, clock div is %d\n", clk_hz, clk_div);
 
