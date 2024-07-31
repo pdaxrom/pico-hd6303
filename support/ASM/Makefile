@@ -19,3 +19,4 @@ $(UNIASM):
 
 clean:
 	rm -f *.LST *.CMD ymstreamer *.BIN
+	make -C $(shell dirname $(UNIASM)) clean

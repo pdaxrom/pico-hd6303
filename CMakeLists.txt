@@ -11,9 +11,15 @@ pico_sdk_init()
 
 add_executable(${PROJECT_NAME})
 
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bootrom.h
+       COMMAND make ${CMAKE_CURRENT_BINARY_DIR}/bootrom.h H_OUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/ clean
+       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/support/BOOTROM
+)
+
 target_sources(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${CMAKE_CURRENT_LIST_DIR}/usb_descriptors.c
+        ${CMAKE_CURRENT_BINARY_DIR}/bootrom.h
         )
 
 # Build pio

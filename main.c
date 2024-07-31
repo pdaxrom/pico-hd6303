@@ -22,7 +22,7 @@
 #else
 #include "hd6303_pi.pio.h"
 #endif
-#include "support/BOOTROM/bootrom.h"
+#include "bootrom.h"
 
 #define CPU_CLOCK_HZ 2000000
 

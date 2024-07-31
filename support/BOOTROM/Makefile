@@ -12,16 +12,15 @@ $(UNIAS):
 BOOTROM.BIN: $(UNIAS)
 	$(UNIAS) $(ASOPTS) -l BOOTROM.LST -o BOOTROM.BIN BOOTROM.ASM
 
-bootrom.h: BOOTROM.BIN
-	xxd -i BOOTROM.BIN > bootrom.h
-	$(SED) -i 's/unsigned char BOOTROM_BIN/const unsigned char __in_flash\("bootrom_file"\) bootrom_file/g' bootrom.h
-	$(SED) -i 's/BOOTROM_BIN/bootrom_file/g' bootrom.h
+$(H_OUT_DIR)bootrom.h: BOOTROM.BIN
+	xxd -i BOOTROM.BIN > $(H_OUT_DIR)bootrom.h
+	$(SED) -ie 's/unsigned char BOOTROM_BIN/const unsigned char __in_flash\("bootrom_file"\) bootrom_file/g' $(H_OUT_DIR)bootrom.h
+	$(SED) -ie 's/BOOTROM_BIN/bootrom_file/g' $(H_OUT_DIR)bootrom.h
 
 clean:
-	rm -f *.BIN *.LST *.CMD bootloader *.o bootrom.h
-
-flash: BOOTROM.BIN
-	minipro -p AT29C010A -w uartboot.bin
+	rm -f *.BIN *.LST *.CMD bootloader *.o bootrom.h*
+	rm -rf bootloader.dSYM
+	make -C $(shell dirname $(UNIAS)) clean
 
 bootloader: bootloader.c
 	$(CC) $^ -o $@ -Wall -O2 -g
