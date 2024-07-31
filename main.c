@@ -71,13 +71,17 @@ void hd6303_pi()
     gpio_put(CPU_RST, 1);
 
     uint32_t clk_div = clock_get_hz(clk_sys) / (CPU_CLOCK_HZ * 4);
-    uint32_t clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS);
-
-    printf("SYS clock is %d, current GPIO clock is %d\n", clock_get_hz(clk_sys), clk_hz);
-
+#ifdef PICO_HD6303_HW
+    uint32_t clk_hz_prev = clock_get_hz(CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS);
     clock_gpio_init(CPU_CLK, CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS, clk_div);
-    clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS);
+    uint32_t clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT2_CTRL_AUXSRC_VALUE_CLK_SYS);
+#else
+    uint32_t clk_hz_prev = clock_get_hz(CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS);
+    clock_gpio_init(CPU_CLK, CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS, clk_div);
+    uint32_t clk_hz = clock_get_hz(CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS);
+#endif
 
+    printf("SYS clock is %d, original GPIO clock is %d\n", clock_get_hz(clk_sys), clk_hz_prev);
     printf("GPIO clock is %d, clock div is %d\n", clk_hz, clk_div);
 
     printf("Resetting...\n");
