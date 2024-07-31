@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define BAUDRATE B115200
+#define BAUDRATE B9600
 #define MODEMDEVICE "/dev/ttyUSB0"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
@@ -25,11 +25,10 @@ int main(int argc, char *argv[])
     struct termios tty_old;
     memset (&tty, 0, sizeof tty);
 
-
-    fd = open(argv[1], O_RDWR | O_NOCTTY); 
+    fd = open(argv[1], O_RDWR | O_NONBLOCK | O_NOCTTY); 
 
     if (fd <0) {
-	perror(MODEMDEVICE);
+	perror(argv[1]);
 	exit(-1);
     }
 
@@ -116,7 +115,7 @@ int main(int argc, char *argv[])
 		sscanf(argv[5], "%x", &e);
 	    }
 
-	    fprintf(stderr, "< %x %x\n", s, e);
+	    fprintf(stderr, "< 0x%x 0x%x\n", s, e);
 
 	    unsigned char tmp[5] = { 'L', (s >> 8) & 0xff, s & 0xff, (e >> 8) & 0xff, e & 0xff };
 	    write(fd, tmp, 5);
@@ -144,7 +143,7 @@ int main(int argc, char *argv[])
 	unsigned int e;
 	sscanf(argv[3], "%x", &s);
 
-	fprintf(stderr, "go %x\n", s);
+	fprintf(stderr, "go 0x%x\n", s);
 
 	unsigned char tmp[5] = { 'G', (s >> 8) & 0xff, s & 0xff };
 	write(fd, tmp, 3);

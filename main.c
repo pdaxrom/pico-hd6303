@@ -24,7 +24,8 @@
 #endif
 #include "bootrom.h"
 
-#define CPU_CLOCK_HZ 2000000
+//#define CPU_CLOCK_HZ 2000000
+#define CPU_CLOCK_HZ 1000000
 
 static uint8_t cpu_memory[65536];
 

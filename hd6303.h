@@ -36,7 +36,7 @@
 #define UART_TX_PIN (28)
 #define UART_RX_PIN (29)
 #define UART_ID     uart0
-#define BAUD_RATE   115200
+#define BAUD_RATE   9600
 
 #else
 
@@ -74,6 +74,6 @@
 #define UART_TX_PIN (16)
 #define UART_RX_PIN (17)
 #define UART_ID     uart0
-#define BAUD_RATE   115200
+#define BAUD_RATE   9600
 
 #endif
